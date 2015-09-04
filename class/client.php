@@ -68,25 +68,6 @@ class OAuthClient
 		return isset($_REQUEST[static::PARAM_CODE]);
 	}
 
-	public function getCode()
-	{
-		return $_REQUEST[static::PARAM_CODE];
-	}
-
-	public function getState()
-	{
-		if($this->state === null)
-		{
-			$this->state = array();
-			if(isset($_REQUEST[static::PARAM_STATE]))
-			{
-				parse_str($_REQUEST[static::PARAM_STATE], $this->state);
-			}
-		}
-
-		return $this->state;
-	}
-
 	public function getAuth($refresh_token = null)
 	{
 		if($refresh_token === null)
@@ -99,6 +80,7 @@ class OAuthClient
 						"grant_type" => "authorization_code",
 						"client_id" => $this->clientId,
 						"client_secret" => $this->clientSecret,
+						"scope" => $this->prepareScope(),
 						"code" => $this->getCode(),
 					);
 
@@ -120,11 +102,31 @@ class OAuthClient
 				"grant_type" => "refresh_token",
 				"client_id" => $this->clientId,
 				"client_secret" => $this->clientSecret,
+				"scope" => $this->prepareScope(),
 				"refresh_token" => $refresh_token,
 			);
 
 			return $this->query($this->portal . static::TOKEN_URL . "?" . http_build_query($query));
 		}
+	}
+
+	protected function getCode()
+	{
+		return $_REQUEST[static::PARAM_CODE];
+	}
+
+	protected function getState()
+	{
+		if($this->state === null)
+		{
+			$this->state = array();
+			if(isset($_REQUEST[static::PARAM_STATE]))
+			{
+				parse_str($_REQUEST[static::PARAM_STATE], $this->state);
+			}
+		}
+
+		return $this->state;
 	}
 
 	protected function prepareScope()
@@ -149,11 +151,7 @@ class OAuthClient
 
 	protected function checkCidValue()
 	{
-		print_r($_SESSION);
-
 		$state = $this->getState();
-
-		print_r($state);
 
 		$checkResult = isset($state[static::CID_STATE_PARAM]) && $state[static::CID_STATE_PARAM] == $this->getCidValue();
 
